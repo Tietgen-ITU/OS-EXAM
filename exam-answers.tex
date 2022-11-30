@@ -1,0 +1,33 @@
+\documentclass[11pt]{article}
+\title{Operating systems and C - Exam Answers}
+\author{Andreas Nicolaj Tietgen - ant@itu.dk}
+
+\begin{document}
+\maketitle
+
+\section{Data lab}
+
+\subsection{Describe your implementation of \textit{howManyBits(x)}}
+// TODO: Describe something here.
+
+\subsection{Describe your implementation of \textit{tmin(void)}}
+The \textit{tmin} tasks was about creating the minimum number in a two complement bit representation.
+Two's complement uses the most significant bit as a sign bit. That is, the bit at the left most position indicates whether 
+it is a negative or positive number. If the bit is 1 then the number is a minus. 
+
+In terms of how the minimum number is represented in a two's complement system then it is by having the first bit set to 1 and then rest of the bits set to 0.
+In a 32 bit system then it would look like the following:
+
+$1000 0000 0000 0000 0000 0000 0000 0000 = -2147483648$
+
+Following the set of rules for the specific assignment, then it could be solved by having a constant which is $0x01$
+and then bit-shift by 31 positions.   
+
+\section{Perf lab}
+
+\section{Malloc lab}
+
+\section{Topics from the class}
+
+
+\end{document}
