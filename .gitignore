@@ -1,0 +1,6 @@
+*.gz
+*.aux
+*.fls
+*.log
+*.fdb_latexmk
+*.code-workspace
