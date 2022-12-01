@@ -3,7 +3,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{inconsolata}
 
-\newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{orange}\texttt{#1}}}}
+\newcommand{\code}[1]{{\colorbox{lightgray!20}{\color{orange}\texttt{#1}}}}
 \newcommand{\temp}[1]{{\color{red}#1}}
 
 \title{Operating systems and C - Exam Answers}
@@ -80,8 +80,14 @@ Afterwards it decides whether to split or not. \code{place()} is going to split 
 We then set the header and the footer to be the difference, i.e. the variable \code{size\_diff} and use the \code{insert\_free\_block} to insert the splitted block to the segregated free list.
 
 \subsection{What is pointer arithmetic?}
+Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes 
+that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
+So as an example in a 64-bit word system, an int32 pointer called \code{int\_p} and a long pointer called \code{long\_p} would move at their own respective data-size.
+That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 8 bytes.
 
-// TODO: Explain pointer arithmetic and how i use it in the malloc lab
+That is also why that in malloc lab, in order to move a pointer only 1 byte we then cast the pointer as a char and add one just like: 
+
+\code{HDRP(bp) ((char *)bp - WSIZE)}
 
 \section{Topics from the class}
 
