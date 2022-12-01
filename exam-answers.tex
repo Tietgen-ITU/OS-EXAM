@@ -1,4 +1,11 @@
 \documentclass[11pt]{article}
+\usepackage{xcolor}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
+
+\newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{orange}\texttt{#1}}}}
+\newcommand{\temp}[1]{{\color{red}#1}}
+
 \title{Operating systems and C - Exam Answers}
 \author{Andreas Nicolaj Tietgen - ant@itu.dk}
 
@@ -7,11 +14,11 @@
 
 \section{Data lab}
 
-\subsection{Describe your implementation of \textit{howManyBits(x)}}
+\subsection{Describe your implementation of \code{howManyBits(x)}}
 // TODO: Describe something here.
 
-\subsection{Describe your implementation of \textit{tmin(void)}}
-The \textit{tmin} tasks was about creating the minimum number in a two complement bit representation.
+\subsection{Describe your implementation of \code{tmin(void)}}
+The \code{tmin()} tasks was about creating the minimum number in a two complement bit representation.
 Two's complement uses the most significant bit as a sign bit. That is, the bit at the left most position indicates whether 
 it is a negative or positive number. If the bit is 1 then the number is a minus. 
 
@@ -20,14 +27,86 @@ In a 32 bit system then it would look like the following:
 
 $1000 0000 0000 0000 0000 0000 0000 0000 = -2147483648$
 
-Following the set of rules for the specific assignment, then it could be solved by having a constant which is $0x01$
+Following the set of rules for the specific assignment, then it could be solved by having a constant which is \code{0x01}
 and then bit-shift by 31 positions.   
 
 \section{Perf lab}
 
+\subsection{A. What is the difference between spatial and temporal locality}
+
+// TODO: Describe the difference
+
+// TODO: This is mandatory. Provide an example of situations where each is important and explain how caching plays a role
+
+\subsection{B. What is SIMD processing}
+
+// TODO: Explain what SIMD processing is
+// TODO: Explain whether or not my solution benefits from SIMD (and if not, why not?)
 \section{Malloc lab}
+\subsection{Explain in detail your implementation of the \code{mm\_malloc} function}
+
+My implementation of the \code{mm\_malloc()} function stays the same as it was in the book.\temp{(reference the book)}
+However, the implementation of the \code{find\_fit()} and \code{place()} has changed, which the \code{mm\_malloc()} use. So in order to explain \code{mm\_malloc()},
+the we also have to explain those two functions as well.
+The implementation of the malloc lab is the segregated free list. 
+The way it is implemented is by first creating an implementation of the implicit free list, then explicit free list, 
+which then resulted in the segregated free list.
+This means that the segregated free list is basically an explicit free list for each equivalence class.
+
+When implementing the \code{mm\_malloc()} function, it first performs some checks of the requested \code{size}. The first check is to see if the size is equal to 0. If that is the case then we have to return \code{NULL}.
+Afterwards, we have to adjust the variable \code{size} to be aligned to 8. There are two cases:
+\begin{itemize}
+    \item When the requested size is below or equal the constant \code{DSIZE}: We set the adjusted size, i.e. \code{asize}, to $2 * DSIZE$.
+    \item When the requested size is above the constant \code{DSIZE}: We use the \code{ALIGN} macro with $size + DSIZE$ as an argument.
+\end{itemize}
+
+We add \code{DSIZE} to the actual size in the last case to ensure that we have space for the header and footer.
+Now that we have adjusted the size we then try to find a fit in our free list. 
+We try to find a fit by using the \code{find\_fit} function.
+
+\subsubsection{find\_fit}
+The \code{find\_fit()} utilizes the segregated free list implementation by getting the index to the list that contains the size being requested. 
+If the list points to \code{NULL} then we increment the index by 1 and gets the next list. 
+If there is not found any fit in any of the lists then \code{find\_fit()} function returns \code{NULL}.
+If the list has an entry then due to the first fit implementation, then it will take the first that can hold the requested size.
+
+\subsubsection{place}
+\temp{(Add code with line numbers)}
+
+\code{place()} starts by removing the free block, that is going to be allocated, from the free list by using the \code{remove\_from\_free\_list()} function. 
+Afterwards it decides whether to split or not. \code{place()} is going to split if the size difference between the free block and the requested size is greater than $2 * DSIZE$.
+\temp{Why is it that it needs to be greater than $2 * DSIZE$?}
+\code{place()} splits by setting the allocated block to the size of \code{asize}. Afterwards it jumps to the next block with \code{NEXT\_BLKP}.
+We then set the header and the footer to be the difference, i.e. the variable \code{size\_diff} and use the \code{insert\_free\_block} to insert the splitted block to the segregated free list.
+
+\subsection{What is pointer arithmetic?}
+
+// TODO: Explain pointer arithmetic and how i use it in the malloc lab
 
 \section{Topics from the class}
 
+\subsection{A. What is the difference between traps, faults and aborts in the context of interrupts?}
 
+// TODO: Explain the difference between traps, faults and aborts
+
+\subsection{B. What is the difference between an ephemeral and a well-known port?}
+
+// TODO: Explain the difference and give examples
+
+\subsection{C. What is a memory leak?}
+// TODO: Describe what a memory leak indicates
+
+// TODO: Describe when it does occur
+
+// TODO: Describe how to avoid it
+
+\subsection{D. What is a race-condition?}
+
+// TODO: Describe what it is
+
+// TODO: Why is it hard to debug?
+
+// TODO: Which instructions can you use to avoid a race-condition
+
+// TODO Why are these instructions expensive?
 \end{document}
