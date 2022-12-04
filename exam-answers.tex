@@ -2,8 +2,31 @@
 \usepackage{xcolor}
 \usepackage[T1]{fontenc}
 \usepackage{inconsolata}
+\usepackage{listings}
 
-\newcommand{\code}[1]{{\colorbox{lightgray!20}{\color{orange}\texttt{#1}}}}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset
+{ %Formatting for code in appendix
+    language=C,
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    stepnumber=1,
+    showstringspaces=false,
+    tabsize=1,
+    breaklines=true,
+    breakatwhitespace=false,
+}
+
+\newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{orange}\texttt{#1}}}}
 \newcommand{\temp}[1]{{\color{red}#1}}
 
 \title{Operating systems and C - Exam Answers}
@@ -15,17 +38,69 @@
 \section{Data lab}
 
 \subsection{Describe your implementation of \code{howManyBits(x)}}
-// TODO: Describe something here.
+Sadly I did not make this in time before the handin deadline. However, I have figured a way to 
+solve the problem. First we need to make sure that input \code{x} is positive or else we have to negate it.
+
+\begin{lstlisting}
+int is_negative = x >> 31;
+int result = 0;
+int min_required_bits = 0;
+
+// Get the positive integer
+int temp = (is_negative & ~x) | (~is_negative & x); 
+\end{lstlisting}
+\temp{(Explain why we need the absolute value)}
+
+Now that we have the positive value, what we want to do is to find out where the first active bit is in a big endian order.
+We can do it by using a sort of binary search. We test if the first 16 bits contain an active bit by performing
+the following:
+
+\begin{lstlisting}
+min_required_bits = !!(temp >> 16) << 4;
+
+/* 
+* Shift the result such that we can continue the search for the 
+* last active bit 
+*/
+temp >>= min_required_bits;
+result += min_required_bits; // Store the min required bits
+\end{lstlisting}
+
+If it contains active bits then \code{!!(temp >> 16) == 1} and then by bit-shifting left by 4 
+gives the value 16. This guarantees that we must have at least 16 bits to represent the number. 
+If there wasn't an active bit in the 16 most significant bits then the result would be 0 and for 
+that reason not get above 16 since we now know that there could not be a bit at a higher position than 15.
+
+We then continue the binary search by doing checking the 8 most significant of what is left:
+
+\begin{lstlisting}
+min_required_bits = !!(temp >> 8) << 3;
+
+/* 
+* Shift the result such that we can continue the search for the 
+* last active bit 
+*/
+temp >>= min_required_bits;
+result += min_required_bits; // Store the min required bits
+\end{lstlisting}
+
+We continue the process by looking for the active bit by halving the bit-shitt operation each time 
+and decrementing the shift operation performed on the result until we reach the end.
+When the binary search is finished, we add the remaining the value of \code{temp} to the result
+since the remaining is either 1 or 0. We also add 1 because we need to include the sign bit.
+
+Now the implementation is finished and we have counted all of the bits.
+
 
 \subsection{Describe your implementation of \code{tmin(void)}}
-The \code{tmin()} tasks was about creating the minimum number in a two complement bit representation.
+The \code{tmin()} task was about creating the minimum number in a two complement bit representation.
 Two's complement uses the most significant bit as a sign bit. That is, the bit at the left most position indicates whether 
 it is a negative or positive number. If the bit is 1 then the number is a minus. 
 
 In terms of how the minimum number is represented in a two's complement system then it is by having the first bit set to 1 and then rest of the bits set to 0.
 In a 32 bit system then it would look like the following:
 
-$1000 0000 0000 0000 0000 0000 0000 0000 = -2147483648$
+$1000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000_2 = -2147483648_{10}$
 
 Following the set of rules for the specific assignment, then it could be solved by having a constant which is \code{0x01}
 and then bit-shift by 31 positions.   
@@ -96,23 +171,32 @@ That is also why that in malloc lab, in order to move a pointer only 1 byte we t
 // TODO: Explain the difference between traps, faults and aborts
 
 \subsection{B. What is the difference between an ephemeral and a well-known port?}
-
-// TODO: Explain the difference and give examples
+The ephemeral ports are something that is being assigned automatically by kernel of the client. The operating system has a predefined range of ports that it uses to automatically provide a port when a client application wants to communicate through. 
+Where as well known ports are typically assigned with some service and has been 
+agreed upon by the community. As an example the port 80 is a well known port for the \textit{http} protocol.
 
 \subsection{C. What is a memory leak?}
-// TODO: Describe what a memory leak indicates
+A memory leak is when something is allocated that is never cleaned up while the application is running. 
+It is a lethal thing for an application to occur. This normally happens when we allocate some data in the heap
+by using \code{malloc}, from the standard library, and forgets to use the function \code{free} to clean up the memory
+at that specific location. \temp{(Create a code example of when a memory leak occurs)}
 
-// TODO: Describe when it does occur
-
-// TODO: Describe how to avoid it
+When you have a memory leak in your application then it indicates that it forgets to clean up.
+In order to avoid memory leak then we have to keep track of what we allocated and when we would like to clean it up.
+\temp{(TODO: Look if we can do something specific in order to avoid memory leak)}
 
 \subsection{D. What is a race-condition?}
+A race condition can happen when two concurrent processes changes the same variable at nearly the same time. 
+More specifically this can happen because thread A access the variable \code{int a}. Before the thread begins to add 1 then the operating system performs a thread context switch and then thread B reads the same variable and write \code{a + 1} to it.
+However, thread A didn't get that changes since before it gave the control to thread B, happen to read the variable before it could add 1 to it. So for that reason the variable is only added by 1 instead of 2 in this example.
 
-// TODO: Describe what it is
-
-// TODO: Why is it hard to debug?
+This specific scenario can be very hard to debug. But why? Race conditions does not always occur. So if you were to try debug and recreate the example then another example could occur or it might actually work as expected(in that specific run).
 
 // TODO: Which instructions can you use to avoid a race-condition
+We can use the concept of a \textit{mutex} or a \textit{semaphore}. These two provides operations that, if used correctly, can ensure that 
+only one thread at a time can access the critical section at a time. 
 
-// TODO Why are these instructions expensive?
+It is expensive because even though we have a secured the critical section, then all of the threads have to wait until it gets access to
+the critical section. They cannot in other words not do any work until it is being let through. This can cause some bottle necks in terms of 
+gaining performance if something is taking long time to compute in the critical section.
 \end{document}
