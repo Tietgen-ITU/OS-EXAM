@@ -168,13 +168,10 @@ int pow(int a, int pow) {
 
     return tmp;
 }
-
-Both spatial and temporal locality is important for caching.
 \end{lstlisting}
-
-// TODO: Describe the difference
-
-// TODO: This is mandatory. Provide an example of situations where each is important and explain how caching plays a role
+When \textit{Spatial} or \textit{temporal locality} the cache is being used. This is very important in terms of performance.
+We use the cache to get data that we need for our application fast. The difference between main memory and the L1 cache is around 100 clock cycles.
+So by utilizing locality we limit the cache misses and help our applications to utilize the cache better making our applications perform better.
 
 \subsection{B. What is SIMD processing}
 
@@ -230,8 +227,20 @@ That is also why that in malloc lab, in order to move a pointer only 1 byte we t
 \section{Topics from the class}
 
 \subsection{A. What is the difference between traps, faults and aborts in the context of interrupts?}
+Traps, faults and aborts are different exceptions that happens in an operating system.
 
-// TODO: Explain the difference between traps, faults and aborts
+A \textit{trap} is an intentional exception. What happens is that a system call trigger the \textit{trap} and passes control 
+to an exception handler. The exception handler then handles the trap and returns to the instruction that is after the system call.
+\textit{Traps} are typically used for calls that request services from the kernel. This could be reading a file with the system call \code{read}
+or creating a new process with \code{fork}.
+
+A \textit{fault} happens when an instruction causes an error. When this occurs, it then passes control to an exception handler for that specific fault.
+Here two things can happen. The exception handler can handle the fault and give back control to the application by re-executing the instruction. 
+It could also choose to abort instead and terminate the application that caused the fault.
+
+An \textit{abort} is when the function reaches a fatal error. Again, we pass control to an exception handler.
+However, the exception handler does not try to repair the situation. The handler instead it is being sent to the abort routine 
+never giving control back to the application.
 
 \subsection{B. What is the difference between an ephemeral and a well-known port?}
 The ephemeral ports are something that is being assigned automatically by kernel of the client. The operating system has a predefined range of ports that it uses to automatically provide a port when a client application wants to communicate through. 
