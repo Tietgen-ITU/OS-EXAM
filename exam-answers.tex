@@ -3,11 +3,15 @@
 \usepackage[T1]{fontenc}
 \usepackage{inconsolata}
 \usepackage{listings}
+\usepackage{graphicx}
+\graphicspath{ {./imgs/} }
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\usepackage[font={color=codegray},figurename=Figure,labelfont={it}]{caption}
 
 \lstset
 { %Formatting for code in appendix
@@ -28,6 +32,14 @@
 
 \newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{orange}\texttt{#1}}}}
 \newcommand{\temp}[1]{{\color{red}#1}}
+\newcommand{\centeredpic}[3]{
+    \begin{figure}[h]
+        \includegraphics[scale=0.5]{#1}
+        \centering
+        \caption{#2}
+        \label{fig:#3}
+    \end{figure}
+}
 
 \title{Operating systems and C - Exam Answers}
 \author{Andreas Nicolaj Tietgen - ant@itu.dk}
@@ -35,62 +47,89 @@
 \begin{document}
 \maketitle
 
+\tableofcontents
+
 \section{Data lab}
 
 \subsection{Describe your implementation of \code{howManyBits(x)}}
-Sadly I did not make this in time before the handin deadline. However, I have figured a way to 
-solve the problem. First we need to make sure that input \code{x} is positive or else we have to negate it.
+Sadly I did not make this in time before the hand-in deadline. However, I have figured a way to 
+solve the problem. The idea is to perform a binary search for the most significant active bit.
+The issue is that we also need to do this for negative numbers where the sign bit is active. In order to 
+solve this we then take the bitwise negation of x. Doing so leaves us with a number that is one short of being the
+actual absolute value. However, the reason for that is to avoid overflowing to a negative number again. 
+When the binary search is finished, we then add 1 to the result in order to take the signed bit into account.
 
+Lets make a walkthrough. We have \code{x = 0xA0FFF0F0} which is a negative number.
+We find out that it is a negative number by looking at the signed bit. We then take the
+logical negation of the number so that x is now \code{0x5f000f0f}. 
+Now what we want to do is to figure out where the most significant active bit is. As mentioned before,
+it can be found by performing binary search. 
+
+So we start from the middle:
+
+\centeredpic{howmanybits-01.png}{Bit representation of the negated integer of \code{x}}{hmb-step-1}
+
+We look to the left and check if there is at least 1 bit that is active(i,e, a bit with the value 1). In figure \ref{fig:hmb-step-1}, there is a bit that is active.
+For now, we can with confidence say that we at least need 16 bits in order to represent this number.
+
+The following code provides the same result:
 \begin{lstlisting}
-int is_negative = x >> 31;
-int result = 0;
-int min_required_bits = 0;
-
-// Get the positive integer
-int temp = (is_negative & ~x) | (~is_negative & x); 
-\end{lstlisting}
-\temp{(Explain why we need the absolute value)}
-
-Now that we have the positive value, what we want to do is to find out where the first active bit is in a big endian order.
-We can do it by using a sort of binary search. We test if the first 16 bits contain an active bit by performing
-the following:
-
-\begin{lstlisting}
-min_required_bits = !!(temp >> 16) << 4;
-
+    int active_bits_left = !!(temp >> 16);
+    min_required_bits = active_bits_left << 4;
+    
+    /* 
 /* 
+    /* 
+    * Shift the result such that we can continue the search for the 
 * Shift the result such that we can continue the search for the 
+    * Shift the result such that we can continue the search for the 
+    * last active bit 
 * last active bit 
-*/
-temp >>= min_required_bits;
-result += min_required_bits; // Store the min required bits
+    * last active bit 
+    */
+    temp >>= min_required_bits;
+    result += min_required_bits; // Store the min required bits
 \end{lstlisting}
 
-If it contains active bits then \code{!!(temp >> 16) == 1} and then by bit-shifting left by 4 
-gives the value 16. This guarantees that we must have at least 16 bits to represent the number. 
-If there wasn't an active bit in the 16 most significant bits then the result would be 0 and for 
-that reason not get above 16 since we now know that there could not be a bit at a higher position than 15.
+The \code{!!(temp >> 16)} looks at the left half of the bit representation and returns 1 if there is an active bit and 0 if not. We then bit shift it by 4 in order to get the amount of bits 
+that we can guarantee that is required to represent the integer. 
 
-We then continue the binary search by doing checking the 8 most significant of what is left:
+At line 8 we bit shift the \code{min\_required\_bits}, i.e. 16 in this case, such that we can continue our search. The result looks like the following:
+\centeredpic{howmanybits-02.png}{The bit representation of temp after bits shifting it. Grey blocks, have been bit shifted out}{hmb-step-2}
 
+As figure \ref{fig:hmb-step-2} shows, we now continue the process of binary search and take the half again. Again we can see that there is
+a bit on the left side of line. This guarantee that we now at least need 8 bits on top of the previous 16 bits that we have, i.e. 24.
+
+The code to perform this looks nearly the same as in figure \ref{fig:hmb-step-1}:
 \begin{lstlisting}
-min_required_bits = !!(temp >> 8) << 3;
+    int active_bits_left !!(temp >> 8);
+    min_required_bits =  active_bits_left << 3;
 
+    /* 
 /* 
+    /* 
+    * Shift the result such that we can continue the search for the 
 * Shift the result such that we can continue the search for the 
+    * Shift the result such that we can continue the search for the 
+    * last active bit 
 * last active bit 
-*/
-temp >>= min_required_bits;
-result += min_required_bits; // Store the min required bits
+    * last active bit 
+    */
+    temp >>= min_required_bits;
+    result += min_required_bits; // Store the min required bits
 \end{lstlisting}
 
-We continue the process by looking for the active bit by halving the bit-shitt operation each time 
-and decrementing the shift operation performed on the result until we reach the end.
-When the binary search is finished, we add the remaining the value of \code{temp} to the result
-since the remaining is either 1 or 0. We also add 1 because we need to include the sign bit.
+The difference is at line 1 and 2. At line 1 we half the amount of bits that we want to bit-shift with at each step until it reaches zero. And at line 2 we decrement the 
+amount of bits we bit shift the result of the \code{active\_bits\_left} by one at each step until it reaches zero. 
+Another things to notice as well is that we continue to add the minimum required bits that we bit-shift out of the \code{temp} at each step.
+The following figure is an illustration of continuing the steps describe: 
+\centeredpic{howmanybits-03.png}{An illustration of the continuation of the same steps. The gray blocks have been bit-shited out}{hmb-step-last}
 
-Now the implementation is finished and we have counted all of the bits.
-
+Before the last step of figure \ref{fig:hmb-step-last}, the minimum required bits is 30. The last step is a bit different. The left side of the line does not have an active bit.
+For that reason, the variable \code{minimum\_required\_bits} is 0 and we do not bit shift.
+The process of performing binary search is done. However we still need to add the result of \code{temp}. Because if the bit on the right side of line is active, then that needs to be added.
+Due to our binary search and bit-shifting of the binary representation of the integer, then we only add 1 or 0 to our result. 
+Before we return the result, we need to add the sign bit. For that reason we add 1 to the result. We return a result of 32 minimum required bits to represent \code{0xA0FFF0F0}.
 
 \subsection{Describe your implementation of \code{tmin(void)}}
 The \code{tmin()} task was about creating the minimum number in a two complement bit representation.
