@@ -139,10 +139,20 @@ it is a negative or positive number. If the bit is 1 then the number is a minus.
 In terms of how the minimum number is represented in a two's complement system then it is by having the first bit set to 1 and then rest of the bits set to 0.
 In a 32 bit system then it would look like the following:
 
-$1000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000_2 = -2147483648_{10}$
+\begin{figure}[h]
+    $1000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000 \; 0000_2 = -2147483648_{10}$
+    \centering
+\end{figure}
 
-Following the set of rules for the specific assignment, then it could be solved by having a constant which is \code{0x01}
-and then bit-shift by 31 positions.   
+
+Following the set of rules for the assignment, it is solved by having a constant which is \code{0x01}
+and then bit-shift by 31 positions like the following:
+\begin{lstlisting}
+    int tmin() {
+        return 0x01 << 31;
+    }
+\end{lstlisting}
+
 
 \section{Perf lab}
 
