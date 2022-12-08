@@ -4,6 +4,7 @@
 \usepackage{inconsolata}
 \usepackage{listings}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage[backend=biber,
 style=alphabetic,
 citestyle=authoryear]{biblatex} %Imports biblatex package
@@ -38,7 +39,7 @@ citestyle=authoryear]{biblatex} %Imports biblatex package
 \newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{black}\texttt{#1}}}}
 \newcommand{\temp}[1]{{\color{red}#1}}
 \newcommand{\centeredpic}[4][0.5]{
-    \begin{figure}[h]
+    \begin{figure}[H]
         \includegraphics[scale=#1]{#2}
         \centering
         \caption{#3}
@@ -286,7 +287,7 @@ that the address moves is depending on which type of pointer it is e.g. \code{ch
 As figure \ref{fig:pointer-arith} shows, in a 64-bit word system, an \code{int*} called \code{int\_p} and a \code{char*} called \code{char\_p} would move at their own respective data-size.
 That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 1 byte.
 That is also why that in malloc lab, in order to move a pointer only 1 byte we then cast the pointer as a char and add one just like: 
-\begin{figure}
+\begin{figure}[h]
     \code{HDRP(bp) ((char *)bp - WSIZE)}
     \centering
 \end{figure}
