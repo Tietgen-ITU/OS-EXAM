@@ -30,19 +30,19 @@
     breakatwhitespace=false,
 }
 
-\newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{orange}\texttt{#1}}}}
+\newcommand{\code}[1]{{\colorbox{lightgray!15}{\color{black}\texttt{#1}}}}
 \newcommand{\temp}[1]{{\color{red}#1}}
-\newcommand{\centeredpic}[3]{
+\newcommand{\centeredpic}[4][0.5]{
     \begin{figure}[h]
-        \includegraphics[scale=0.5]{#1}
+        \includegraphics[scale=#1]{#2}
         \centering
-        \caption{#2}
-        \label{fig:#3}
+        \caption{#3}
+        \label{fig:#4}
     \end{figure}
 }
 
 \title{Operating systems and C - Exam Answers}
-\author{Andreas Nicolaj Tietgen - ant@itu.dk}
+\author{Andreas Nicolaj Tietgen - anti@itu.dk}
 
 \begin{document}
 \maketitle
@@ -174,45 +174,77 @@ We use the cache to get data that we need for our application fast. The differen
 So by utilizing locality we limit the cache misses and help our applications to utilize the cache better making our applications perform better.
 
 \subsection{B. What is SIMD processing}
+SIMD, also known as \textit{Single Instruction Multiple Data}, is a way to perform computations on a lot of data
+with one instruction. The way that it works is by defining a vector with the data that we want to perform computations
+upon using the \textit{AVX} library. The \textit{AVX} library contains functions that ensures that we perform the computation 
+with one single instruction. 
 
-// TODO: Explain what SIMD processing is
-// TODO: Explain whether or not my solution benefits from SIMD (and if not, why not?)
+My solution does not utilize SIMD. That is due to not using vectors that we can perform arithmetic operations upon. However, the smooth
+solution could have benefitted from it in the cases where we need to take the average of $3 * 3$ pixel. Here we could have created a accumulator vector
+and a vector for each row and use the \code{+} between the accumulator and the row. Afterwards we can add each value in the accumulator vector and divide it by nine.
+This will lead to removing 3 add instructions in the \code{avg\_smooth} function making it more performant.
+
 \section{Malloc lab}
 \subsection{Explain in detail your implementation of the \code{mm\_malloc} function}
+\centeredpic[0.4]{Allocation blocks.png}{Show how an allocated and free block is structured}{blocks}
+In order to understand the implementation of \code{mm\_malloc()}, then we have to understand how we keep track of the free memory blocks that we have.
+In figure \ref{fig:blocks} is a representation of the an allocated and a free block. The header and footer contains the same data i.e., the size and a flag indicating if it is allocated or not.
+The difference between the allocated and the free block is that, we have a previous free block pointer and a next free block pointer. We use these pointers,
+to link our free blocks together into an \textit{explicit free list}(See figure \ref{fig:explicit-list}).
+\centeredpic[0.4]{Explicit free list.png}{shows explicit free list is structured}{explicit-list}
+The explicit free list only points to free blocks. For that reason, we use the previous and next free block pointers to create a linked list. 
+When we insert a new block to the free list, we insert it at the beginning. We set the free pointers such that the new element points with the next pointer to the previously first free block in the list and by making the previously
+first free block setting the previous free block pointer to point to the new free block.
 
-My implementation of the \code{mm\_malloc()} function stays the same as it was in the book.\temp{(reference the book)}
-However, the implementation of the \code{find\_fit()} and \code{place()} has changed, which the \code{mm\_malloc()} use. So in order to explain \code{mm\_malloc()},
-the we also have to explain those two functions as well.
-The implementation of the malloc lab is the segregated free list. 
-The way it is implemented is by first creating an implementation of the implicit free list, then explicit free list, 
-which then resulted in the segregated free list.
-This means that the segregated free list is basically an explicit free list for each equivalence class.
+However, the implementation of the explicit free list contains every free block unordered in size. The potential running time of getting an
+element that is equal or greater than the size we want could be $O(n)$ where $n$ is the number of free blocks in the explicit free list.
+For that reason, I have implemented segregated free list. As figure \ref{fig:segregated-list} shows then it consists of an array of pointers to 
+explicit free lists. The entries of explicit lists only contains particular sizes. 
+\centeredpic[0.3]{Segregated free list.png}{Segregated free lists consist of an array of explicit free lists, where the explicit free list have its own equivalence class}{segregated-list}
+This allows us to skip free blocks that are too small and look in the explicit free lists that could have a free block that fits in size.
 
-When implementing the \code{mm\_malloc()} function, it first performs some checks of the requested \code{size}. The first check is to see if the size is equal to 0. If that is the case then we have to return \code{NULL}.
-Afterwards, we have to adjust the variable \code{size} to be aligned to 8. There are two cases:
+The implementation of the \code{mm\_malloc()} function, is the same as the books\temp{(reference the book)} implementation.
+It first checks the requested \code{size}. The first check is to see if the size is equal to 0. If that is the case, we have to return \code{NULL}.
+Afterwards, we have to adjust the variable \code{size} to be aligned to 8 and save it to a variable called \code{asize}. 
+There are two cases that needs to be taken care of:
 \begin{itemize}
     \item When the requested size is below or equal the constant \code{DSIZE}: We set the adjusted size, i.e. \code{asize}, to $2 * DSIZE$.
-    \item When the requested size is above the constant \code{DSIZE}: We use the \code{ALIGN} macro with $size + DSIZE$ as an argument.
+    \item When the requested size is above the constant \code{DSIZE}: We use the \code{ALIGN()} macro with $size + DSIZE$ as an argument. We add \code{DSIZE} to the size as input
+    in \code{ALIGN()} to ensure that we have space for the header and footer.
 \end{itemize}
 
-We add \code{DSIZE} to the actual size in the last case to ensure that we have space for the header and footer.
-Now that we have adjusted the size we then try to find a fit in our free list. 
-We try to find a fit by using the \code{find\_fit} function.
+After adjusting the size, we use the \code{find\_fit()} function to find a free block that can contain the adjusted size, \code{asize}. If it returns \code{NULL} then we need to extend the
+heap. 
+Now that we have a free block then we need to allocate it. 
+\code{place()} takes care of allocating the free block, and returns a pointer to the allocated block.
 
-\subsubsection{find\_fit}
-The \code{find\_fit()} utilizes the segregated free list implementation by getting the index to the list that contains the size being requested. 
-If the list points to \code{NULL} then we increment the index by 1 and gets the next list. 
-If there is not found any fit in any of the lists then \code{find\_fit()} function returns \code{NULL}.
-If the list has an entry then due to the first fit implementation, then it will take the first that can hold the requested size.
+\subsubsection{\code{find\_fit()}}
+The \code{find\_fit()} utilizes the segregated free list implementation by getting the index to the list that contains the size being requested.
+This ensures that we skip the lists that does not contain sizes that fits the requested size. 
+The function then tries to go through the remaining lists. Due to the first fit implementation it will stop as soon as it finds
+a free block that fits the requested size. If the current list, that we go through, points to \code{NULL} then we increment the index by 1 and gets the next list.
+If none of the lists have a entry that fits, then the \code{find\_fit()} function returns \code{NULL}.
 
-\subsubsection{place}
+\subsubsection{\code{place()}}
 \temp{(Add code with line numbers)}
+Before \code{place()} starts allocating the free block, it first calculate the difference in size between the size of the free block and the requested and store the result in a variable \code{size\_diff}.
+Afterwards it removes the free block from the free list by calling the \code{remove\_free\_block()} function. We do so to ensure that the free block we want to allocate, 
+is not going to be present in the free list anymore. Now that it is removed, the function then decides whether we should split the block which we want to allocate. 
+\code{place()} is going to split if the variable \code{size\_diff} is greater than $2 * DSIZE$.
+We need it to be greater than $2 * DSIZE$ such that we have place for the header, footer, next pointer, and previous pointer. 
 
-\code{place()} starts by removing the free block, that is going to be allocated, from the free list by using the \code{remove\_from\_free\_list()} function. 
-Afterwards it decides whether to split or not. \code{place()} is going to split if the size difference between the free block and the requested size is greater than $2 * DSIZE$.
-\temp{Why is it that it needs to be greater than $2 * DSIZE$?}
-\code{place()} splits by setting the allocated block to the size of \code{asize}. Afterwards it jumps to the next block with \code{NEXT\_BLKP}.
-We then set the header and the footer to be the difference, i.e. the variable \code{size\_diff} and use the \code{insert\_free\_block} to insert the splitted block to the segregated free list.
+If the function decides to split then it does the following: 
+\begin{itemize}
+    \item Sets the header and footer of the block we want to allocate, by setting the size to be equal to the \code{asize} and allocation tag to be 1.
+    \item We then jump to the next free block, with \code{NEXT\_BLKP} and sets the header and footer to be the size to \code{size\_diff} and the allocation tag to 0, i.e. free.
+    \item Lastly it adds the new free block to the free list with the function \code{insert\_free\_block}.
+\end{itemize}
+
+If the \code{place()} function decides not to split, it then allocates the free block by setting the header and footer with a size that it already had an the allocation flag to be allocated.
+
+
+\subsubsection{\code{mm\_malloc()}}
+When implementing the \code{mm\_malloc()} function, 
 
 \subsection{What is pointer arithmetic?}
 Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes 
@@ -251,11 +283,41 @@ agreed upon by the community. As an example the port 80 is a well known port for
 A memory leak is when something is allocated that is never cleaned up while the application is running. 
 It is a lethal thing for an application to occur. This normally happens when we allocate some data in the heap
 by using \code{malloc}, from the standard library, and forgets to use the function \code{free} to clean up the memory
-at that specific location. \temp{(Create a code example of when a memory leak occurs)}
+at that specific location.
+
+\begin{lstlisting}
+    int do_something() {
+        int *numbers_p = malloc(sizeof(int)*10);
+
+        // Init numbers
+        for(int i = 0; i < 10; i++) {
+
+            numbers_p[i] = i + 1;
+        }
+
+        int sum = get_sum(numbers_p, 10);
+        
+        return sum;
+    }
+
+    int get_sum(int *numbers, int count) {
+        int sum = 0;
+
+        for(int i = 0; i < count; i++) {
+
+            sum += numbers[i];
+        }
+
+        return sum;
+    }
+\end{lstlisting}
+We can see from the above code that we allocated 10 integers in the heap and initialize them 
+to $1, 2, 3 ... 10$. Then the \code{get\_sum()} calculates the sum of all the values and returns it.
+At the end of function \code{do\_something()} it returns the \code{sum} value. However, the \code{numbers\_p}
+still remains in the heap since we have not called the \code{free()} function.
 
 When you have a memory leak in your application then it indicates that it forgets to clean up.
-In order to avoid memory leak then we have to keep track of what we allocated and when we would like to clean it up.
-\temp{(TODO: Look if we can do something specific in order to avoid memory leak)}
+In order to avoid memory leak then we need to keep track of what we have allocated and when we would like to clean it up with the function \code{free()}.
 
 \subsection{D. What is a race-condition?}
 A race condition can happen when two concurrent processes changes the same variable at nearly the same time. 
@@ -271,4 +333,8 @@ only one thread at a time can access the critical section at a time.
 It is expensive because even though we have a secured the critical section, then all of the threads have to wait until it gets access to
 the critical section. They cannot in other words not do any work until it is being let through. This can cause some bottle necks in terms of 
 gaining performance if something is taking long time to compute in the critical section.
+
+% Add section for appendix
+\input{appendix/main-appendix.tex}
+
 \end{document}
