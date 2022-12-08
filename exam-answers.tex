@@ -4,6 +4,11 @@
 \usepackage{inconsolata}
 \usepackage{listings}
 \usepackage{graphicx}
+\usepackage[backend=biber,
+style=alphabetic,
+citestyle=authoryear]{biblatex} %Imports biblatex package
+
+\addbibresource{references.bib}
 \graphicspath{ {./imgs/} }
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -41,11 +46,6 @@
     \end{figure}
 }
 
-
-
-\title{}
-\author{Andreas Nicolaj Tietgen - anti@itu.dk}
-
 \begin{document}
 \begin{titlepage}
     \begin{center}
@@ -63,6 +63,9 @@
         Andreas Nicolaj Tietgen 
         
         anti@itu.dk
+
+        \vfill
+        16. Dec 2022
     \end{center}
 \end{titlepage}
 
@@ -225,7 +228,7 @@ explicit free lists. The entries of explicit lists only contains particular size
 \centeredpic[0.3]{Segregated free list.png}{Segregated free lists consist of an array of explicit free lists, where the explicit free list have its own equivalence class}{segregated-list}
 This allows us to skip free blocks that are too small and look in the explicit free lists that could have a free block that fits in size.
 
-The implementation of the \code{mm\_malloc()} function, is the same as the books\temp{(reference the book)} implementation.
+The implementation of the \code{mm\_malloc()} function, is the same as the books implementation(\cite[ch. 9.9.12]{csapp-mem}).
 It first checks the requested \code{size}. The first check is to see if the size is equal to 0. If that is the case, we have to return \code{NULL}.
 Afterwards, we have to adjust the variable \code{size} to be aligned to 8 and save it to a variable called \code{asize}. 
 There are two cases that needs to be taken care of:
@@ -363,6 +366,9 @@ only one thread at a time can access the critical section at a time.
 It is expensive because even though we have a secured the critical section, then all of the threads have to wait until it gets access to
 the critical section. They cannot in other words not do any work until it is being let through. This can cause some bottle necks in terms of 
 gaining performance if something is taking long time to compute in the critical section.
+
+\newpage
+\printbibliography
 
 % Add section for appendix
 \newpage
