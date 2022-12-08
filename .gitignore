@@ -3,4 +3,10 @@
 *.fls
 *.log
 *.fdb_latexmk
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.toc
+
 *.code-workspace
