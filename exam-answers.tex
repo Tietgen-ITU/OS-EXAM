@@ -41,14 +41,36 @@
     \end{figure}
 }
 
-\title{Operating systems and C - Exam Answers}
+
+
+\title{}
 \author{Andreas Nicolaj Tietgen - anti@itu.dk}
 
 \begin{document}
-\maketitle
+\begin{titlepage}
+    \begin{center}
+        \huge
+        \textbf{Operating systems and C}
+
+        \vspace{0.5cm}
+        Exam answers
+
+        \vspace{3cm}
+        \includegraphics[width=0.6\textwidth]{itu.jpeg}
+
+        \vspace{3cm}
+        \large
+        Andreas Nicolaj Tietgen 
+        
+        anti@itu.dk
+    \end{center}
+\end{titlepage}
+
+\newpage
 
 \tableofcontents
 
+\newpage
 \section{Data lab}
 
 \subsection{Describe your implementation of \code{howManyBits(x)}}
@@ -219,42 +241,52 @@ Now that we have a free block then we need to allocate it.
 \code{place()} takes care of allocating the free block, and returns a pointer to the allocated block.
 
 \subsubsection{\code{find\_fit()}}
-The \code{find\_fit()} utilizes the segregated free list implementation by getting the index to the list that contains the size being requested.
-This ensures that we skip the lists that does not contain sizes that fits the requested size. 
-The function then tries to go through the remaining lists. Due to the first fit implementation it will stop as soon as it finds
-a free block that fits the requested size. If the current list, that we go through, points to \code{NULL} then we increment the index by 1 and gets the next list.
-If none of the lists have a entry that fits, then the \code{find\_fit()} function returns \code{NULL}.
+
+The \code{find\_fit()} utilizes the segregated free list implementation.
+This can be seen in figure \ref{fig:get-list-index} where it gets the index of the first list that could contain the size being requested.
+\begin{figure}[h]
+    \code{int index = get\_free\_list\_index(size);}
+    \centering
+    \caption{Shows Line 4 in appendix \ref{appendix:find_fit}}
+    \label{fig:get-list-index}
+\end{figure}
+This ensures that we skip the lists that does not contain sizes that fits the requested size. The index serves as a starting point
+of where to look for a free block. The function goes through each explicit free list from the starting point(see line 6-8 in appendix \ref{appendix:find_fit}).
+Due to the first fit implementation it will stop as soon as it finds a free block that fits the requested size. 
+If the current list, that we go through, points to \code{NULL} or does not have a block that fits, we increment the index by 1 and get the next list.
+If \code{find\_fit()} is not able to find a free block that fits, it will then return \code{NULL}.
 
 \subsubsection{\code{place()}}
-\temp{(Add code with line numbers)}
 Before \code{place()} starts allocating the free block, it first calculate the difference in size between the size of the free block and the requested and store the result in a variable \code{size\_diff}.
 Afterwards it removes the free block from the free list by calling the \code{remove\_free\_block()} function. We do so to ensure that the free block we want to allocate, 
 is not going to be present in the free list anymore. Now that it is removed, the function then decides whether we should split the block which we want to allocate. 
 \code{place()} is going to split if the variable \code{size\_diff} is greater than $2 * DSIZE$.
 We need it to be greater than $2 * DSIZE$ such that we have place for the header, footer, next pointer, and previous pointer. 
 
-If the function decides to split then it does the following: 
+If the function decides to split then it does the following(see line 26-32 in appendix \ref{appendix:place}): 
 \begin{itemize}
     \item Sets the header and footer of the block we want to allocate, by setting the size to be equal to the \code{asize} and allocation tag to be 1.
     \item We then jump to the next free block, with \code{NEXT\_BLKP} and sets the header and footer to be the size to \code{size\_diff} and the allocation tag to 0, i.e. free.
     \item Lastly it adds the new free block to the free list with the function \code{insert\_free\_block}.
 \end{itemize}
 
-If the \code{place()} function decides not to split, it then allocates the free block by setting the header and footer with a size that it already had an the allocation flag to be allocated.
-
-
-\subsubsection{\code{mm\_malloc()}}
-When implementing the \code{mm\_malloc()} function, 
+If the \code{place()} function decides not to split, it then allocates the free block by setting the header and footer with a size that it already had an the allocation flag to be allocated like the following code:
+\begin{lstlisting}
+PUT(HDRP(bp), PACK(size, 1));
+PUT(FTRP(bp), PACK(size, 1)); 
+\end{lstlisting}
 
 \subsection{What is pointer arithmetic?}
 Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes 
 that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
-So as an example in a 64-bit word system, an int32 pointer called \code{int\_p} and a long pointer called \code{long\_p} would move at their own respective data-size.
-That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 8 bytes.
-
+\centeredpic{pointer arithmetic.png}{Show the difference when adding n to a pointer of a specific type. Each block represents one byte. When adding 1 to a char pointer it moves only by one byte. When adding 1 to an int pointer it moves by 4.}{pointer-arith}
+As figure \ref{fig:pointer-arith} shows, in a 64-bit word system, an \code{int*} called \code{int\_p} and a \code{char*} called \code{char\_p} would move at their own respective data-size.
+That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 1 byte.
 That is also why that in malloc lab, in order to move a pointer only 1 byte we then cast the pointer as a char and add one just like: 
-
-\code{HDRP(bp) ((char *)bp - WSIZE)}
+\begin{figure}
+    \code{HDRP(bp) ((char *)bp - WSIZE)}
+    \centering
+\end{figure}
 
 \section{Topics from the class}
 
@@ -325,8 +357,6 @@ More specifically this can happen because thread A access the variable \code{int
 However, thread A didn't get that changes since before it gave the control to thread B, happen to read the variable before it could add 1 to it. So for that reason the variable is only added by 1 instead of 2 in this example.
 
 This specific scenario can be very hard to debug. But why? Race conditions does not always occur. So if you were to try debug and recreate the example then another example could occur or it might actually work as expected(in that specific run).
-
-\temp{// TODO: Which instructions can you use to avoid a race-condition}
 We can use the concept of a \textit{mutex} or a \textit{semaphore}. These two provides operations that, if used correctly, can ensure that 
 only one thread at a time can access the critical section at a time. 
 
@@ -335,6 +365,7 @@ the critical section. They cannot in other words not do any work until it is bei
 gaining performance if something is taking long time to compute in the critical section.
 
 % Add section for appendix
+\newpage
 \input{appendix/main-appendix.tex}
 
 \end{document}

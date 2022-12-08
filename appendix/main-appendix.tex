@@ -47,6 +47,38 @@ void *mm_malloc(size_t size)
 }
 \end{lstlisting}
 
+\section{\code{find\_fit()} implementation} \label{appendix:find_fit}
+\begin{lstlisting}
+static void *find_fit(size_t size) {
+
+    // Get index for free list based on size
+    int index = get_free_list_index(size); 
+
+    for(int i = index; i < num_free_lists; i++) {
+
+        char *current = free_lists[i];
+
+        if(current == NULL)
+            continue;
+
+        // Go through the list and take the first that fits
+        while(current != NULL) {
+
+            size_t current_size = GET_SIZE(HDRP(current)); 
+
+            /* If the size of the current free block is greater than the requested
+            then return it */ 
+            if(current_size >= size)
+                return current;
+                
+            current = NEXT_FREE_BLOCK(current);    
+        }
+    }
+
+    return NULL;
+}
+\end{lstlisting}
+
 \section{\code{place()} implementation} \label{appendix:place}
 
 \begin{lstlisting}
