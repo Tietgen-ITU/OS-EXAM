@@ -1,0 +1,75 @@
+\section{Topics from the class}
+
+\subsection{A. What is the difference between traps, faults and aborts in the context of interrupts?}
+Traps, faults and aborts are different exceptions that happens in an operating system.
+
+A \textit{trap} is an intentional exception. What happens is that a system call trigger the \textit{trap} and passes control 
+to an exception handler. The exception handler then handles the trap and returns to the instruction that is after the system call.
+\textit{Traps} are typically used for calls that request services from the kernel. This could be reading a file with the system call \code{read}
+or creating a new process with \code{fork}.
+
+A \textit{fault} happens when an instruction causes an error. When this occurs, it then passes control to an exception handler for that specific fault.
+Here two things can happen. The exception handler can handle the fault and give back control to the application by re-executing the instruction. 
+It could also choose to abort instead and terminate the application that caused the fault.
+
+An \textit{abort} is when the function reaches a fatal error. Again, we pass control to an exception handler.
+However, the exception handler does not try to repair the situation. The handler instead it is being sent to the abort routine 
+never giving control back to the application.
+
+\subsection{B. What is the difference between an ephemeral and a well-known port?}
+The ephemeral ports are something that is being assigned automatically by kernel of the client. The operating system has a predefined range of ports that it uses to automatically provide a port when a client application wants to communicate through. 
+Where as well known ports are typically assigned with some service and has been 
+agreed upon by the community. As an example the port 80 is a well known port for the \textit{http} protocol.
+
+\subsection{C. What is a memory leak?}
+A memory leak is when something is allocated that is never cleaned up while the application is running. 
+It is a lethal thing for an application to occur. This normally happens when we allocate some data in the heap
+by using \code{malloc}, from the standard library, and forgets to use the function \code{free} to clean up the memory
+at that specific location.
+
+\begin{lstlisting}
+    int do_something() {
+        int *numbers_p = malloc(sizeof(int)*10);
+
+        // Init numbers
+        for(int i = 0; i < 10; i++) {
+
+            numbers_p[i] = i + 1;
+        }
+
+        int sum = get_sum(numbers_p, 10);
+        
+        return sum;
+    }
+
+    int get_sum(int *numbers, int count) {
+        int sum = 0;
+
+        for(int i = 0; i < count; i++) {
+
+            sum += numbers[i];
+        }
+
+        return sum;
+    }
+\end{lstlisting}
+We can see from the above code that we allocated 10 integers in the heap and initialize them 
+to $1, 2, 3 ... 10$. Then the \code{get\_sum()} calculates the sum of all the values and returns it.
+At the end of function \code{do\_something()} it returns the \code{sum} value. However, the \code{numbers\_p}
+still remains in the heap since we have not called the \code{free()} function.
+
+When you have a memory leak in your application then it indicates that it forgets to clean up.
+In order to avoid memory leak then we need to keep track of what we have allocated and when we would like to clean it up with the function \code{free()}.
+
+\subsection{D. What is a race-condition?}
+A race condition can happen when two concurrent processes changes the same variable at nearly the same time. 
+More specifically this can happen because thread A access the variable \code{int a}. Before the thread begins to add 1 then the operating system performs a thread context switch and then thread B reads the same variable and write \code{a + 1} to it.
+However, thread A didn't get that changes since before it gave the control to thread B, happen to read the variable before it could add 1 to it. So for that reason the variable is only added by 1 instead of 2 in this example.
+
+This specific scenario can be very hard to debug. But why? Race conditions does not always occur. So if you were to try debug and recreate the example then another example could occur or it might actually work as expected(in that specific run).
+We can use the concept of a \textit{mutex} or a \textit{semaphore}. These two provides operations that, if used correctly, can ensure that 
+only one thread at a time can access the critical section at a time. 
+
+It is expensive because even though we have a secured the critical section, then all of the threads have to wait until it gets access to
+the critical section. They cannot in other words not do any work until it is being let through. This can cause some bottle necks in terms of 
+gaining performance if something is taking long time to compute in the critical section.
