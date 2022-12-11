@@ -2,55 +2,43 @@
 
 \subsection{Explain in detail your implementation of the \code{mm\_malloc} function}
 \centeredpic[0.4]{Allocation blocks.png}{Show how an allocated and free block is structured}{blocks}
-In order to understand the implementation of \code{mm\_malloc()}, then we have to understand how we keep track of the free memory blocks that we have.
-In figure \ref{fig:blocks} is a representation of the an allocated and a free block. The header and footer contains the same data i.e., the size and a flag indicating if it is allocated or not.
-The difference between the allocated and the free block is that, we have a previous free block pointer and a next free block pointer. We use these pointers,
-to link our free blocks together into an \textit{explicit free list}(See figure \ref{fig:explicit-list}).
-\centeredpic[0.4]{Explicit free list.png}{shows explicit free list is structured}{explicit-list}
+In order to understand the implementation of \code{mm\_malloc()}, then we have to understand how we keep track of the free memory blocks that my dynamic memory allocator manages. In figure \ref{fig:blocks} is a representation of an allocated and a free block. The header and footer contains the same data i.e., the size and a flag indicating if it is allocated or not. The difference between the allocated and the free block is that, we have a previous free and a next free block pointer. We use these pointers, to link our free blocks together into an \textit{explicit free list}(See figure \ref{fig:explicit-list}).
+\centeredpic[0.4]{Explicit free list.png}{shows explicit free list is structured}{explicit-list} 
 The explicit free list only points to free blocks. For that reason, we use the previous and next free block pointers to create a linked list. 
-When we insert a new block to the free list, we insert it at the beginning. We set the free pointers such that the new element points with the next pointer to the previously first free block in the list and by making the previously
-first free block setting the previous free block pointer to point to the new free block.
+When we insert a new block to the free list, we insert it at the beginning. We set the free pointers such that the new free block points with the next pointer to the previously first free block in the list and by making the previously first free block setting the previous free block pointer to point to the new free block.
 
-However, the implementation of the explicit free list contains every free block unordered in size. The potential running time of getting an
-element that is equal or greater than the size we want could be $O(n)$ where $n$ is the number of free blocks in the explicit free list.
-For that reason, I have implemented segregated free list. As figure \ref{fig:segregated-list} shows then it consists of an array of pointers to 
-explicit free lists. The entries of explicit lists only contains particular sizes. 
+However, the implementation of the explicit free list contains every free block, unordered in size. The potential running time of getting a free block, that is equal or greater than the size we want is $O(n)$, where $n$ is the number of free blocks in the explicit free list. For that reason, I have implemented segregated free list. As figure \ref{fig:segregated-list} shows, it consists of an array of pointers to explicit free lists. Each entry of explicit list only contains particular sizes. 
 \centeredpic[0.3]{Segregated free list.png}{Segregated free lists consist of an array of explicit free lists, where the explicit free list have its own equivalence class}{segregated-list}
 This allows us to skip free blocks that are too small and look in the explicit free lists that could have a free block that fits in size.
 
 The implementation of the \code{mm\_malloc()} function, is the same as the books implementation(\cite[ch. 9.9.12]{csapp-mem}).
-It first checks the requested \code{size}. The first check is to see if the size is equal to 0. If that is the case, we have to return \code{NULL}.
-Afterwards, we have to adjust the variable \code{size} to be aligned to 8 and save it to a variable called \code{asize}. 
-There are two cases that needs to be taken care of:
+It first checks the requested \code{size}. If the size is equal to 0, we have to return \code{NULL}.
+Afterwards, we have to adjust the variable \code{size} to be aligned to 8 and save it to a variable called \code{asize}. There are two cases that needs to be taken care of:
 \begin{itemize}
     \item When the requested size is below or equal the constant \code{DSIZE}: We set the adjusted size, i.e. \code{asize}, to $2 * DSIZE$.
     \item When the requested size is above the constant \code{DSIZE}: We use the \code{ALIGN()} macro with $size + DSIZE$ as an argument. We add \code{DSIZE} to the size as input
     in \code{ALIGN()} to ensure that we have space for the header and footer.
 \end{itemize}
 
-After adjusting the size, we use the \code{find\_fit()} function to find a free block that can contain the adjusted size, \code{asize}. If it returns \code{NULL} then we need to extend the
-heap. 
-Now that we have a free block then we need to allocate it. 
+After adjusting the size, we use the \code{find\_fit()} function to find a free block that can contain the adjusted size, \code{asize}. If it returns \code{NULL} then we need to extend the heap.  When we have obtained a free block, then we need to allocate it. 
 \code{place()} takes care of allocating the free block, and returns a pointer to the allocated block.
 
 \subsubsection{\code{find\_fit()}}
 
-The \code{find\_fit()} utilizes the segregated free list implementation.
-This can be seen in figure \ref{fig:get-list-index} where it gets the index of the first list that could contain the size being requested.
+The \code{find\_fit()} utilizes the segregated free list implementation. This can be seen in figure \ref{fig:get-list-index} where it gets the index of the first list that could contain the size being requested.
 \begin{figure}[h]
     \code{int index = get\_free\_list\_index(size);}
     \centering
     \caption{Shows Line 4 in appendix \ref{appendix:find_fit}}
     \label{fig:get-list-index}
 \end{figure}
-This ensures that we skip the lists that does not contain sizes that fits the requested size. The index serves as a starting point
-of where to look for a free block. The function goes through each explicit free list from the starting point(see line 6-8 in appendix \ref{appendix:find_fit}).
+This ensures that we skip the lists that do not have sizes that cannot fit the requested size. The index serves as a starting point of where to look for a free block. The function goes through each explicit free list from the starting point(see line 6-8 in appendix \ref{appendix:find_fit}).
 Due to the first fit implementation it will stop as soon as it finds a free block that fits the requested size. 
 If the current list, that we go through, points to \code{NULL} or does not have a block that fits, we increment the index by 1 and get the next list.
 If \code{find\_fit()} is not able to find a free block that fits, it will then return \code{NULL}.
 
 \subsubsection{\code{place()}}
-Before \code{place()} starts allocating the free block, it first calculate the difference in size between the size of the free block and the requested and store the result in a variable \code{size\_diff}.
+Before \code{place()} starts allocating the free block, it first calculates the difference in size between the size of the free block and the requested. The result of the calculation is stored in \code{size\_diff}.
 Afterwards it removes the free block from the free list by calling the \code{remove\_free\_block()} function. We do so to ensure that the free block we want to allocate, 
 is not going to be present in the free list anymore. Now that it is removed, the function then decides whether we should split the block which we want to allocate. 
 \code{place()} is going to split if the variable \code{size\_diff} is greater than $2 * DSIZE$.
@@ -63,19 +51,17 @@ If the function decides to split then it does the following(see line 26-32 in ap
     \item Lastly it adds the new free block to the free list with the function \code{insert\_free\_block}.
 \end{itemize}
 
-If the \code{place()} function decides not to split, it then allocates the free block by setting the header and footer with a size that it already had an the allocation flag to be allocated like the following code:
+If the \code{place()} function decides not to split, it allocates the free block by setting the header and footer with an allocated allocation flag, but leaves the size as it is, like the following code:
 \begin{lstlisting}
 PUT(HDRP(bp), PACK(size, 1));
 PUT(FTRP(bp), PACK(size, 1)); 
 \end{lstlisting}
 
 \subsection{What is pointer arithmetic?}
-Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes 
-that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
+Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
 \centeredpic{pointer arithmetic.png}{Show the difference when adding n to a pointer of a specific type. Each block represents one byte. When adding 1 to a char pointer it moves only by one byte. When adding 1 to an int pointer it moves by 4.}{pointer-arith}
-As figure \ref{fig:pointer-arith} shows, in a 64-bit word system, an \code{int*} called \code{int\_p} and a \code{char*} called \code{char\_p} would move at their own respective data-size.
-That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 1 byte.
-That is also why that in malloc lab, in order to move a pointer only 1 byte we then cast the pointer as a char and add one just like: 
+As figure \ref{fig:pointer-arith} shows, in a 64-bit word system, an \code{int*} called \code{int\_p} and a \code{char*} called \code{char\_p} would move at their own respective data-size. That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 1 byte.
+As an example, in malloc lab we move a pointer only 1 byte by casting the pointer to a char pointer and add one just like: 
 \begin{figure}[h]
     \code{HDRP(bp) ((char *)bp - WSIZE)}
     \centering
