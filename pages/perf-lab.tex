@@ -28,18 +28,15 @@ int pow(int a, int pow) {
 }
 \end{lstlisting}
 \textit{Spatial} and \textit{temporal locality} is very important to limit the amount of cache misses. This is very important in terms of performance.
-The better the application utilize the cache, the better the faster the application performs. When an application needs a value then it first checks if the cache has
-the value that we are looking for. If not, it then goes further down the memory hierarchy, to get the data that the application needs. 
+The better the application utilizes the cache, the faster the application performs. When an application needs a value it first checks if the cache has
+the value that we are looking for. If not, it goes further down the memory hierarchy, to get the data that the application needs. 
 Since the cache is the closest memory to the CPU then it is also the fastest for the application to use. The difference between main memory and the L1 cache is around 100 clock cycles.
 So by utilizing our cache and limit the cache misses with spatial and temporal locality, our applications run faster.
 
 \subsection{B. What is SIMD processing}
-SIMD, also known as \textit{Single Instruction Multiple Data}, is a way to perform computations on a lot of data
-with one instruction. The way that it works is by defining a vector with the data that we want to perform computations
-upon using the \textit{AVX} library. The \textit{AVX} library contains functions that ensures that we perform the computation 
-with one single instruction. 
+SIMD, also known as \textit{Single Instruction Multiple Data}, is a way to perform computations on a lot of data with one instruction. The way that it works is by defining a vector with values that we want to perform computations upon. The \code{gcc} can generate SIMD with AVX instructions by adding the flag \code{-mavx2}(\cite{simd-avx}).
 
 My solution does not utilize SIMD. That is due to not using vectors that we can perform arithmetic operations upon. However, the smooth
-solution could have benefitted from it in the cases where we need to take the average of $3 * 3$ pixels. Here we could have created a accumulator vector
+solution could have benefitted from it in the cases where we need to take the average of $3 * 3$ pixels. Here we could have created an accumulator vector
 and a vector for each row and use the \code{+} between the accumulator and the row. Afterwards we can add each value in the accumulator vector and divide it by nine.
-This will lead to removing 3 add instructions in the \code{avg\_smooth} function making it more performant.
+This will lead to removing 3 add instructions in the \code{avg\_smooth} function, making it more performant.

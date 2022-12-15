@@ -2,8 +2,8 @@
 
 \subsection{Explain in detail your implementation of the \code{mm\_malloc} function}
 \centeredpic[0.4]{Allocation blocks.png}{Show how an allocated and free block is structured}{blocks}
-In order to understand the implementation of \code{mm\_malloc()}, then we have to understand how we keep track of the free memory blocks that my dynamic memory allocator manages. In figure \ref{fig:blocks} is a representation of an allocated and a free block. The header and footer contains the same data i.e., the size and a flag indicating if it is allocated or not. The difference between the allocated and the free block is that, we have a previous free and a next free block pointer. We use these pointers, to link our free blocks together into an \textit{explicit free list}(See figure \ref{fig:explicit-list}).
-\centeredpic[0.4]{Explicit free list.png}{shows explicit free list is structured}{explicit-list} 
+In order to understand the implementation of \code{mm\_malloc()}, then we have to understand how we keep track of the free memory blocks that my dynamic memory allocator manages. In figure \ref{fig:blocks} is a representation of an allocated and a free block. The header and footer contains the same data i.e., the size and a flag indicating if it is allocated or not. The difference between the allocated and the free block is that we have a previous free and a next free block pointer. We use these pointers, to link our free blocks together into an \textit{explicit free list}(See figure \ref{fig:explicit-list}).
+\centeredpic[0.4]{Explicit free list.png}{shows how explicit free list is structured}{explicit-list} 
 The explicit free list only points to free blocks. For that reason, we use the previous and next free block pointers to create a linked list. 
 When we insert a new block to the free list, we insert it at the beginning. We set the free pointers such that the new free block points with the next pointer to the previously first free block in the list and by making the previously first free block setting the previous free block pointer to point to the new free block.
 
@@ -32,7 +32,7 @@ The \code{find\_fit()} utilizes the segregated free list implementation. This ca
     \caption{Shows Line 4 in appendix \ref{appendix:find_fit}}
     \label{fig:get-list-index}
 \end{figure}
-This ensures that we skip the lists that do not have sizes that cannot fit the requested size. The index serves as a starting point of where to look for a free block. The function goes through each explicit free list from the starting point(see line 6-8 in appendix \ref{appendix:find_fit}).
+This ensures that we skip the lists that do not have sizes that fit the requested size. The index serves as a starting point of where to look for a free block. The function goes through each explicit free list from the starting point(see line 6-8 in appendix \ref{appendix:find_fit}).
 Due to the first fit implementation it will stop as soon as it finds a free block that fits the requested size. 
 If the current list, that we go through, points to \code{NULL} or does not have a block that fits, we increment the index by 1 and get the next list.
 If \code{find\_fit()} is not able to find a free block that fits, it will then return \code{NULL}.
@@ -58,7 +58,7 @@ PUT(FTRP(bp), PACK(size, 1));
 \end{lstlisting}
 
 \subsection{What is pointer arithmetic?}
-Pointer arithmetics are a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
+Pointer arithmetic is a way to move the pointer to another virtual memory address. The special thing to remember is that the amount of bytes that the address moves is depending on which type of pointer it is e.g. \code{char}, \code{integer}, \code{long}, and etc.
 \centeredpic{pointer arithmetic.png}{Show the difference when adding n to a pointer of a specific type. Each block represents one byte. When adding 1 to a char pointer it moves only by one byte. When adding 1 to an int pointer it moves by 4.}{pointer-arith}
 As figure \ref{fig:pointer-arith} shows, in a 64-bit word system, an \code{int*} called \code{int\_p} and a \code{char*} called \code{char\_p} would move at their own respective data-size. That means that \code{int\_p+1} would move 4 bytes, whereas the \code{long\_p+1} would move 1 byte.
 As an example, in malloc lab we move a pointer only 1 byte by casting the pointer to a char pointer and add one just like: 
