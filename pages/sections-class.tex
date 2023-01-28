@@ -17,9 +17,8 @@ However, the exception handler does not try to repair the situation. Instead it 
 never giving control back to the application.
 
 \subsection{B. What is the difference between an ephemeral and a well-known port?}
-The ephemeral ports are something that is being assigned automatically by kernel of the client. The operating system has a predefined range of ports that it uses to automatically provide a port when a client application wants to communicate through. 
-On the other hand, well known ports are typically associated with some service and has been 
-agreed upon by the community. As an example the port 80 is a well known port for the \textit{http} protocol.
+The ephemeral ports are something that is being assigned automatically by the kernel of the client. The operating system has a predefined range of ports that it uses to automatically provide a port when a client application wants to communicate to another service. 
+On the other hand, well known ports are typically associated with some service and has been agreed upon by the community. Well-known ports are used as a fixed port for particular services. As an example the port 80 is a well known port for the \textit{http} protocol is used to expose a web service. 
 
 \subsection{C. What is a memory leak?}
 A memory leak is when something that is allocated is never cleaned up while the application is running. 
@@ -62,9 +61,14 @@ Having a memory leak in your application indicates that it forgets to clean up.
 In order to avoid memory leak we need to keep track of what we have allocated and when we would like to clean it up with the function \code{free()}.
 
 \subsection{D. What is a race-condition?}
-A race condition can happen when two concurrent processes change the same variable at nearly the same time. 
-More specifically this can happen because thread A access the variable \code{int a}. Before the thread begins to add 1 then the operating system performs a thread context switch and then thread B reads the same variable and write \code{a + 1} to it.
-However, thread A didn't get those changes due to reading the variable before it gave the control to thread B. Now thread B reads variable and adds 1 to it. Since thread A still have the old value then it adds 1 to the same value. So for that reason the variable is only added by 1 instead of 2 in this example.
+A race condition can happen when two concurrent processes change the same variable at nearly the same time. More specifically this can happen if two threads, i.e. thread A and B, tries to perform the following at the same time:
+\begin{figure}[h]
+    \code{a = a + 1}
+    \centering
+\end{figure}
+An example of running the above code with thread A and B can be seen at figure \ref{fig:race}.
+Here \code{a} is a shared variable and is initiated to 0. The issue is that thread A only reads \code{a} before a thread context switch to thread B has happened. Now thread B reads \code{a} as 0 and adds 1 to it. However, when the control is passed back to thread A, thread A still has \code{a} as 0. As figure \ref{fig:race} shows, thread A tries to add 1 to \code{a}. This results in writing 1 to \code{a}, even though the expected result should have been 2. 
+\centeredpic[0.5]{Race condition.png}{A table showing a race condition between two threads a and b}{race}
 
 This specific scenario can be very hard to debug. But why? Race conditions does not always occur. So if you were to try debug and recreate the example then another example could occur or it might actually work as expected(in that specific run).
 We can use the concept of a \textit{mutex} or a \textit{semaphore}. These two provide operations that, if used correctly, can ensure that 
